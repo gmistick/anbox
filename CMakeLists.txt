@@ -55,6 +55,10 @@ if (${Werror})
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+install( FILES data/ui/loading-screen.png DESTINATION ${ANBOX_RESOURCE_DIR}/ui)
+install( FILES data/desktop/android-settings.desktop data/desktop/appmgr.desktop DESTINATION /usr/share/applications)
+install(DIRECTORY data/seccomp DESTINATION /etc/anbox USE_SOURCE_PERMISSIONS)
+install( PROGRAMS scripts/container-manager.sh scripts/anbox-bridge.sh scripts/collect-bug-info.sh scripts/app-android-settings.sh scripts/app-appmgr.sh scripts/anbox-shell.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 find_package(Boost COMPONENTS filesystem log serialization system thread program_options)
 find_package(PkgConfig)
@@ -119,7 +123,6 @@ if (NOT "${HOST_CMAKE_C_COMPILER}" STREQUAL "")
   message(STATUS "Host C compiler: ${HOST_CMAKE_CXX_COMPILER}")
 endif()
 
-install(FILES data/ui/loading-screen.png DESTINATION ${ANBOX_RESOURCE_DIR}/ui)
 
 # uninstall target
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"

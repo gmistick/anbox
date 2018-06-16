@@ -33,4 +33,4 @@ if [ -e "$SNAP_COMMON"/.enable_debug ]; then
 	export ANBOX_LOG_LEVEL=debug
 fi
 
-exec $SNAP/usr/bin/anbox $@
+exec $SNAP/usr/local/bin/anbox $@
