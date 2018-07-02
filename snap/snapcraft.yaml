@@ -31,6 +31,7 @@ slots:
 apps:
   anbox:
     command: desktop-launch $SNAP/bin/anbox-wrapper.sh
+    plugs: [fuse-support]
   container-manager:
     command: bin/container-manager.sh start
     stop-command: bin/container-manager.sh stop
@@ -47,6 +48,19 @@ apps:
     desktop: desktop/appmgr.desktop
 
 parts:
+  squashfuse:
+    plugin: nil
+    stage-packages:
+      - squashfuse
+      - fuse
+    filesets:
+      binaries:
+        - usr/bin/squashfuse
+        - sbin/mount.fuse
+    stage:
+      - $binaries
+    prime:
+      - $binaries
   android:
     plugin: dump
     # This needs to be any directory but not the root one as if we use

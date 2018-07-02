@@ -76,6 +76,10 @@ start() {
 		EXTRA_ARGS="$EXTRA_ARGS --privileged"
 	fi
 
+	if [ -n "$SNAP" ]; then
+		export PATH="$PATH:$SNAP/sbin:$SNAP/usr/bin"
+	fi
+
 	exec $AA_EXEC $SNAP/bin/anbox-wrapper.sh container-manager \
 		"$EXTRA_ARGS" \
 		--data-path=$DATA_PATH \

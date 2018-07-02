@@ -25,6 +25,8 @@
 #include "core/posix/signal.h"
 #include "core/posix/exec.h"
 
+#include <unordered_map>
+
 #include <sys/mount.h>
 #include <linux/loop.h>
 #include <fcntl.h>
@@ -133,6 +135,7 @@ bool anbox::cmds::ContainerManager::setup_mounts() {
   // is available we do the mount instead via squashfuse which will
   // work entirely in userspace.
   if (fs::exists("/dev/loop-control")) {
+    DEBUG("Trying to mount using Loop-control");
     std::shared_ptr<common::LoopDevice> loop_device;
 
     try {
@@ -152,29 +155,38 @@ bool anbox::cmds::ContainerManager::setup_mounts() {
 
     auto m = common::MountEntry::create(loop_device, android_rootfs_dir, "squashfs", MS_MGC_VAL | MS_RDONLY | MS_PRIVATE);
     if (!m) {
-      ERROR("Failed to mount Android rootfs");
+      ERROR("Failed to mount Android rootfs using Loop control");
       return false;
     }
     mounts_.push_back(m);
   } else if (fs::exists("/dev/fuse") && !utils::find_program_on_path("squashfuse").empty()) {
     std::vector<std::string> args = {
+      android_img_path.string(),
+      android_rootfs_dir,
       "-t", "fuse.squashfuse",
       // Allow other users than root to access the rootfs
       "-o", "allow_other",
-      android_img_path.string(),
-      android_rootfs_dir,
     };
+    std::map<std::string,std::string> env;
+    core::posix::this_process::env::for_each([&](const std::string &name, const std::string &value) {
+      env.insert({name, value});
+    });
+
+    fs::path mount_path = "/bin/mount";
+    const auto snap_path = utils::get_env_value("SNAP");
+    if (!snap_path.empty())
+      mount_path = fs::path(snap_path) / "sbin" / "mount.fuse";
 
     // Easiest is here to go with the standard mount program as that
     // will handle everything for us which is relevant to get the
     // squashfs via squashfuse properly mount without having to
     // reimplement all the details. Once the mount call comes back
     // without an error we can expect the image to be mounted.
-    auto child = core::posix::exec("/bin/mount", args, {}, core::posix::StandardStream::empty, []() {});
+    auto child = core::posix::exec(mount_path.string(), args, env, core::posix::StandardStream::empty, []() {});
     const auto result = child.wait_for(core::posix::wait::Flags::untraced);
     if (result.status != core::posix::wait::Result::Status::exited ||
         result.detail.if_exited.status != core::posix::exit::Status::success) {
-      ERROR("Failed to mount squashfs Android image");
+      ERROR("Failed to mount squashfs Android image using FUSE ");
       return false;
     }
 
