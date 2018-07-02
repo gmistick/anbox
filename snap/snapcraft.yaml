@@ -31,6 +31,7 @@ slots:
 apps:
   anbox:
     command: desktop-launch $SNAP/bin/anbox-wrapper.sh
+    plugs: [fuse-support]
   container-manager:
     command: bin/container-manager.sh start
     stop-command: bin/container-manager.sh stop
@@ -38,7 +39,7 @@ apps:
   collect-bug-info:
     command: bin/collect-bug-info.sh
   shell:
-    command: bin/anbox-shell.sh
+    command: bin/dummy.sh
   android-settings:
     command: desktop-launch $SNAP/bin/app-android-settings.sh
     desktop: desktop/android-settings.desktop
@@ -47,6 +48,39 @@ apps:
     desktop: desktop/appmgr.desktop
 
 parts:
+  mount:
+    plugin: nil
+    stage-packages:
+      - mount
+    filesets:
+      binaries:
+        - bin/mount
+    stage:
+      - $binaries
+    prime:
+      - $binaries
+  fusefs:
+    plugin: nil
+    stage-packages:
+      - fuse
+    filesets:
+      binaries:
+        - sbin/mount.fuse
+    stage:
+      - $binaries
+    prime:
+      - $binaries
+  squashfuse:
+    plugin: nil
+    stage-packages:
+      - squashfuse
+    filesets:
+      binaries:
+        - usr/bin/squashfuse
+    stage:
+      - $binaries
+    prime:
+      - $binaries
   android:
     plugin: dump
     # This needs to be any directory but not the root one as if we use
@@ -137,7 +171,6 @@ parts:
       - bin/lxc-attach
       - bin/lxc-ls
       - bin/lxc-top
-
   swiftshader:
     plugin: cmake
     source: https://swiftshader.googlesource.com/SwiftShader
@@ -155,7 +188,6 @@ parts:
       libEGL.so: lib/anbox/swiftshader/libEGL.so
       libGLES_CM.so: lib/anbox/swiftshader/libGLES_CM.so
       libGLESv2.so: lib/anbox/swiftshader/libGLESv2.so
-
   anbox-scripts:
     plugin: dump
     source: scripts
@@ -167,12 +199,14 @@ parts:
       app-android-settings.sh: bin/app-android-settings.sh
       app-appmgr.sh: bin/app-appmgr.sh
       anbox-shell.sh: bin/anbox-shell.sh
+      dummy.sh: bin/dummy.sh
     prime:
       - bin/anbox-bridge.sh
       - bin/anbox-shell.sh
       - bin/anbox-wrapper.sh
       - bin/container-manager.sh
       - bin/collect-bug-info.sh
+      - bin/dummy.sh
       - bin/app-*.sh
 
   anbox-data:

@@ -6,9 +6,9 @@ set -x
 # Other than that nothing should ever modify the content of the
 # rootfs.
 
-DATA_PATH=$SNAP_COMMON/
+DATA_PATH=$SNAP_COMMON/opt/anbox
 ROOTFS_PATH=$DATA_PATH/rootfs
-ANDROID_IMG=$SNAP/android.img
+ANDROID_IMG=$SNAP/opt/anbox/android.img
 
 if [ "$(id -u)" != 0 ]; then
 	echo "ERROR: You need to run the container manager as root"
@@ -24,7 +24,7 @@ start() {
 	# Make sure our setup path for the container rootfs
 	# is present as lxc is statically configured for
 	# this path.
-	mkdir -p $SNAP_COMMON/lxc
+	mkdir -p $DATA_PATH/lxc
 
 	# We start the bridge here as long as a oneshot service unit is not
 	# possible. See snapcraft.yaml for further details.

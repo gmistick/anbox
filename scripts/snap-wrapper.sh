@@ -20,7 +20,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP/lib
 # create all our application launchers in. The system application launcher will
 # be configured by our installer to look into this directory for available
 # launchers.
-export XDG_DATA_HOME="$SNAP_USER_COMMON/app-data"
+export XDG_DATA_HOME="$SNAP_USER_COMMON/opt/anbox/app-data"
 
 # In order to support GLVND based systems we need to work around a bug in snapd
 # as it does not yet expose the EGL vendor configurations from the host to snaps.
@@ -33,4 +33,4 @@ if [ -e "$SNAP_COMMON"/.enable_debug ]; then
 	export ANBOX_LOG_LEVEL=debug
 fi
 
-exec $SNAP/usr/bin/anbox $@
+exec $SNAP/usr/local/bin/anbox $@
