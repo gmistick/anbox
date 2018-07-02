@@ -10,9 +10,22 @@ DATA_PATH=$SNAP_COMMON/
 ROOTFS_PATH=$DATA_PATH/rootfs
 ANDROID_IMG=$SNAP/android.img
 
+if [ "$(id -u)" != 0 ]; then
+	echo "ERROR: You need to run the container manager as root"
+	exit 1
+fi
+
 if [ ! -e $ANDROID_IMG ]; then
 	echo "ERROR: android image does not exist"
 	exit 1
+fi
+
+if [ "$SNAP_ARCH" == "amd64" ]; then
+	ARCH="x86_64-linux-gnu"
+elif [ "$SNAP_ARCH" == "armhf" ]; then
+	ARCH="arm-linux-gnueabihf"
+else
+	ARCH="$SNAP_ARCH-linux-gnu"
 fi
 
 start() {
@@ -36,7 +49,12 @@ start() {
 	fi
 
 	# liblxc.so.1 is in $SNAP/lib
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP/lib
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP/liblxc
+
+	# For unknown reason we got bug reports that the container manager failed to start
+	# because it cannot find libboost_log.so.1.58.0 To mitigate this we're adding the
+	# lib directory as explicit search target here.
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP/usr/lib/$ARCH
 
 	if [ -d /sys/kernel/security/apparmor ] ; then
 		# Load the profile for our Android container
@@ -47,7 +65,19 @@ start() {
 		export ANBOX_LOG_LEVEL=debug
 	fi
 
+	EXTRA_ARGS=
+	enable_rootfs_overlay="$(snapctl get rootfs-overlay.enable)"
+	if [ "$enable_rootfs_overlay" = true ]; then
+		EXTRA_ARGS="$EXTRA_ARGS --use-rootfs-overlay"
+	fi
+
+	privileged_container="$(snapctl get container.privileged)"
+	if [ "$privileged_container" = true ]; then
+		EXTRA_ARGS="$EXTRA_ARGS --privileged"
+	fi
+
 	exec $AA_EXEC $SNAP/bin/anbox-wrapper.sh container-manager \
+		"$EXTRA_ARGS" \
 		--data-path=$DATA_PATH \
 		--android-image=$ANDROID_IMG \
 		--daemon
